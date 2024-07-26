@@ -323,3 +323,16 @@ export def gacp [
 ] {
     git add --all ; git commit -m $message; git push
 }
+
+### Git checkout worktree on the same parent folder
+export def gcow [
+    branch: string # The branch to checkout
+] {
+    # Get the parent folder of the current git repository
+    let parent = (git rev-parse --show-toplevel | path dirname)
+    # Get the name of the remote repository
+    let remote_name = (git remote get-url origin | split column "/" | get column2 | split column "." | get column1 | to text)
+    # Generate the name of the folder for the worktree to be created
+    let worktree_name = (echo $"($remote_name)-($branch)" | str replace "/" "-")
+    git worktree add -b $branch ($parent | path join $worktree_name) origin/$branch
+}
