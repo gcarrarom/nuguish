@@ -18,7 +18,7 @@ Then you should be able to clone your modules (including this one) to the `modul
 
 ```shell
 git clone https://github.com/gcarrarom/nuguish.git ($nu.default-config-dir | path join modules/nuguish)
-echo "use modules/nuguish/nuguish.nu *\n" | save --append $nu.config-path
+echo "use nuguish/nuguish.nu *\n" | save --append $nu.config-path
 ```
 
 ## Updates
