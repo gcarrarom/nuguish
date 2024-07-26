@@ -334,5 +334,5 @@ export def gcow [
     let remote_name = (git remote get-url origin | split column "/" | get column2 | split column "." | get column1 | to text)
     # Generate the name of the folder for the worktree to be created
     let worktree_name = (echo $"($remote_name)-($branch)" | str replace "/" "-")
-    git worktree add -b $branch ($parent | path join $worktree_name) origin/$branch
+    git worktree add ($parent | path join $worktree_name) $"origin/($branch)"
 }
