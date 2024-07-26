@@ -24,5 +24,5 @@ ln -s ($nu.default-config-dir | path join modules/nuguish/nuguish.nu) ($nu.defau
 Now you can add the nuguish module to your NuShell configuration file. You can do this by adding the following line to your `config.nu` file: ($nu.config-path)
 
 ```shell
-use nuguish.nu *
+echo "use nuguish.nu *" | save --append $nu.config-path
 ```
