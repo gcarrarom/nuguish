@@ -299,3 +299,27 @@ export def azgroup [
 
     az configure --defaults $"group=($group_name)"
 }
+
+# Git 
+
+## Aliases
+export alias gl = git pull
+export alias gp = git push
+export alias gaa = git add --all
+export alias gc = git commit -m
+export alias gcm = git commit -m
+export alias gco = git checkout
+export alias gcb = git checkout -b
+export alias gs = git status
+export alias gss = git status -s
+export alias gcam = git commit -am
+
+
+## Functions
+
+### Git Add Commit Push
+export def gacp [
+    message: string # The commit message
+] {
+    git add --all ; git commit -m $message; git push
+}
