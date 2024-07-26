@@ -339,11 +339,56 @@ export alias gcm = git commit -m
 export alias gco = git checkout
 export alias gcb = git checkout -b
 export alias gs = git status
+export alias gst = git status
 export alias gss = git status -s
 export alias gcam = git commit -am
 
 
 ## Functions
+
+export def --wrapped gitc [ profile_name: any url: any ...args] {
+    let YAML_FILE = ($nu.home-path | path join ".git_profiles.yml")
+
+    # Clone the repository with provided arguments
+    git clone $url ...$args
+
+    # Extract the repository name from the URL
+    let repo_name = ($url | path basename | into string | str replace ".git" "")
+    mut last_arg = ""
+    # Determine if a custom path argument is provided
+    if (($args | length) > 0) {
+        $last_arg = ($args | last)
+    }
+
+    sleep  2sec
+
+    # Initialize repo_path to default repo_name
+    mut repo_path = $repo_name
+
+    # Check if last argument is a valid path
+    if ($last_arg | path exists) {
+        $repo_path = $last_arg
+    }
+    # Read and parse the YAML file for the profile details
+    let config = (open ($nu.home-path | path join .git_profiles.yml))
+
+    # Look up the Git configuration details from the parsed
+    let name = ($config.profiles | get $profile_name | get user | get name)
+    let email = ($config.profiles | get $profile_name | get user | get email)
+
+    if ($name == "" or $email == "") {
+        echo $"Incomplete configuration for profile '($profile_name)' in ($YAML_FILE)"
+        return
+    }
+
+    # Set the Git configuration for the cloned repository
+    cd $repo_path
+    git config user.name $name
+    git config user.email $email
+    cd ..
+
+    echo $"Repository cloned and Git user configuration set for profile: ($profile_name)" | ansi gradient --fgstart '0x40c9ff' --fgend '0xe81cff'
+}
 
 ### Git Add Commit Push
 export def gacp [
