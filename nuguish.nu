@@ -149,8 +149,8 @@ export def kreportns [
 
     let avgcpu = echo $toppodsresults | from ssv | get "CPU(cores)" | split column "m" | get column1 | into int | math avg
     let totalcpu = echo $toppodsresults | from ssv | get "CPU(cores)" | split column "m" | get column1 | into int | math sum
-    let avgmem = echo $toppodsresults | from ssv | get "MEMORY(bytes)" | split column "M" | get column1 | into int| math avg
-    let totalmem = echo $toppodsresults | from ssv | get "MEMORY(bytes)" | split column "M" | get column1 | into int| math sum
+    let avgmem = echo $toppodsresults | from ssv | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math avg
+    let totalmem = echo $toppodsresults | from ssv | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math sum
 
     echo $"
     NS TOTAL USAGE:
@@ -215,8 +215,8 @@ export def kreport [] {
     let mempercent = (echo $topnoderesults | get "MEMORY%" | split column "%" | get column1 | into int | math avg)
     let cpunum = (echo $topnoderesults | get "CPU(cores)" | split column "m" | get column1 | into int | math avg)
     let memnum = (echo $topnoderesults | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math avg)
-    let totalcpu = (echo $nodeinformation | get items.status.capacity.cpu | math sum)
-    let totalmemory = ((echo $nodeinformation | get items.status.capacity.memory | split column "K" | into int | math sum) / (1024 * 1024))
+    let totalcpu = (echo $nodeinformation | get items.status.capacity.cpu | into int | math sum)
+    let totalmemory = ((echo $nodeinformation | get items.status.capacity.memory | split column "K" | values | first | into int | math sum) / (1024 * 1024))
     let numnodes = (echo $topnoderesults | length)
     let cpuinuse = ($totalcpu * $cpupercent / 100)
     let mcpuinuse = ($totalcpu * 1000 * $cpupercent / 100)
@@ -224,26 +224,25 @@ export def kreport [] {
     let memoryinusemb = ($totalmemory * 1024 * $mempercent / 100)
 
     # output
-    echo "
-    #all pods:              $numallpods
-    #pods in kube-system:   $numsystempods
-    #pods elsewhere:        $numpodsnotsystem
-    #nodes:                 $numnodes
+    echo $"
+    #all pods:              ($numallpods)
+    #pods in kube-system:   ($numsystempods)
+    #pods elsewhere:        ($numpodsnotsystem)
+    #nodes:                 ($numnodes)
 
-    Total CPU:              $totalcpu
-    Total Memory(GB):       $totalmemory
-    CPU per Node:           $(echo $totalcpu / $numnodes | bc)
-    Memory per Node:        $(echo $totalmemory / $numnodes | bc)
+    Total CPU:              ($totalcpu)
+    Total Memory\(GB):      ($totalmemory | math round)
+    CPU per Node:           ($totalcpu / $numnodes)
+    Memory per Node:        ($totalmemory / $numnodes | math round)
 
-    CPU in use:             $cpuinuse
-    Memory in use(GB):      $memoryinuse
+    # CPU in use:           ($cpuinuse | math round)
+    Memory in use\(GB):     ($memoryinuse | math round)
 
-    mCPU/POD:               $(echo $mcpuinuse / $numallpods | bc)
-    Memory(MB)/POD:         $(echo $memoryinusemb / $numallpods | bc)
+    mCPU/POD:               (($mcpuinuse / $numallpods) | math round)
+    Memory\(MB)/POD:        ($memoryinusemb / $numallpods | math round)
 
-    CPU avg(m cpu): $cpunum = $cpupercent%
-    RAM avg(MB): $memnum = $mempercent%"
-
+    CPU avg\(m cpu):        ($cpunum | math round) = ($cpupercent | math round)%
+    RAM avg\(MB):           ($memnum | math round) = ($mempercent | math round)%"
 }
 
 ## kubernetes aliases
