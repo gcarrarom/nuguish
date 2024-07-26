@@ -29,3 +29,31 @@ To update the module, you can simply pull the changes from the repository and re
 cd ($nu.default-config-dir | path join modules/nuguish)
 git pull
 ```
+
+## Commands
+
+### `gitc`
+`gitc` is a command that wraps the `git clone` command. It allows you to clone a repository, cd into the directory and set the user and email for the repository.
+
+```shell
+gitc <profile> <repository> [git arguments...]
+```
+
+In your home directory (`$nu.home-path`), create a file called `.git_profiles.yml`. Example:
+
+```yaml
+profiles:
+  profile1:
+    user:
+      name: "John Doe"
+      email: "john.doe@example.com"
+  profile2:
+    user:
+      name: "Jane Smith"
+      email: "jane.smith@example.com"
+```
+
+*Note that if you specify any git arguments, it would be good to set last argument to be directory where you want to clone the repository, this way command will cd into right directory.*
+
+**TODO:**
+- [ ] Use `ls -as | where type == dir and modified > ((date now) - 5sec)` to get the last directory created and recursively search for a `.git` directory to set the user and email.
