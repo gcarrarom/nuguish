@@ -17,11 +17,12 @@ $env.NU_LIB_DIRS = [
 Then you should be able to clone your modules (including this one) to the `modules` directory.
 
 ```shell
-git clone github.com/gcarrarom/nuguish $nu.default-config-dir/modules/nuguish
+git clone github.com/gcarrarom/nuguish ($nu.default-config-dir | path join modules/nuguish)
+ln -s ($nu.default-config-dir | path join modules/nuguish/nuguish.nu) ($nu.default-config-dir | path join modules/nuguish.nu)
 ```
 
 Now you can add the nuguish module to your NuShell configuration file. You can do this by adding the following line to your `config.nu` file: ($nu.config-path)
 
 ```shell
-use nuguish *
+use nuguish.nu *
 ```
