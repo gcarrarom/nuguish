@@ -54,6 +54,8 @@ export def mkdircd [
 export alias wifi = networksetup -setairportpower en0
 export alias openfirefox = xargs -I {} open -a "Firefox" -g "{}"
 
+export alias fzfbat = fzf --preview 'bat --color=always --style=numbers --line-range=:500 {}'  --bind $"enter:become\(($env.EDITOR) {1} +{2})"
+
 ### NMAP
 export alias nmap_check_for_firewall = sudo nmap -sA -p1-65535 -v -T4
 export alias nmap_check_for_vulns = nmap --script=vuln
