@@ -58,9 +58,9 @@ export def wifi [
     --off # Turn off the wifi
 ] {
     if $off {
-        networksetup -setairportpower $interface on
-    } else {
         networksetup -setairportpower $interface off
+    } else {
+        networksetup -setairportpower $interface on
     }
 }
 
