@@ -96,83 +96,6 @@ export alias randomdocker = http get https://frightanic.com/goodies_content/dock
 
 # Kubernetes
 
-### Get output type for kubernetes memory output
-def memoryoutput [] {
-    [
-        "G"
-        "Gi"
-        "M"
-        "Mi"
-        "K"
-        "Ki"
-    ]
-}
-
-# ### convert kubernetes memory into proper values
-# def convertk8smemory [
-#     kubernetes_memory: string
-#     output_format: string@memoryoutput = G
-# ] {
-#     if ($kubernetes_memory =~ "G") {
-#         if ($kubernetes_memory =~ "Gi") {
-#             let memory_before_conversion = (echo $kubernetes_memory | sed 's/Gi//g' | into int)
-#             let kubernetes_total_meory = ($memory_before_conversion * 1024 * 1024 * 1024 | into int | into int)
-#         } else {
-#             let memory_before_conversion = (echo $kubernetes_memory | sed 's/G//g' | into int)
-#             let kubernetes_total_memory = ($memory_before_conversion * 1000 * 1000 * 1000 | into int | into int)
-#         }
-#     } else if ($kubernetes_memory =~ "M") {
-#         if ($kubernetes_memory =~ "Mi") {
-#             let memory_before_conversion = (echo $kubernetes_memory | sed 's/Mi//g' | into int)
-#             let kubernetes_total_memory = ($memory_before_conversion * 1024 * 1024  | into int)
-#         } else {
-#             let memory_before_conversion = (echo $kubernetes_memory | sed 's/M//g' | into int)
-#             let kubernetes_total_memory = ($memory_before_conversion * 1000 * 1000  | into int)
-#         }
-#     } else {
-#         if ($kubernetes_memory =~ "K") {
-#             let memory_before_conversion = (echo $kubernetes_memory | sed 's/Ki//g' | into int)
-#             let kubernetes_total_memory = ($memory_before_conversion * 1024  | into int)
-#         } else {
-#             let memory_before_conversion = (echo $kubernetes_memory | sed 's/K//g' | into int)
-#             let kubernetes_total_memory = ($memory_before_conversion * 1000  | into int)
-#         }
-#     }
-
-
-#     if ($output_format == "G") {
-#         $kubernetes_total_memory / (1000 * 1000 * 1000)
-#     } 
-#     else if ($output_format == "Gi") {
-#         $kubernetes_total_memory / (1024 * 1024 * 1024)
-#     } 
-#     else if ($output_format == "M") {
-#         $kubernetes_total_memory / (1000 * 1000)
-#     } 
-#     else if ($output_format == "Mi") {
-#         $kubernetes_total_memory / (1024 * 1024)
-#     } 
-#     else if ($output_format == "K") {
-#         $kubernetes_total_memory / (1000)
-#     } 
-#     else if ($output_format == "Ki") {
-#         $kubernetes_total_memory / (1024)
-#     } 
-
-# }
-
-# def convertk8scpu [
-#     cpu_kubernetes: string
-# ] {
-#     if ($cpu_kubernetes =~ "m" ) {
-#         let new_cpu_value = (echo $cpu_kubernetes | sed 's/m//g' | into int)
-#     } else {
-
-#         let new_cpu_value = (($cpu_kubernetes | into int) * 1000 | into int)
-#     }
-#     echo $new_cpu_value
-# }
-
 def available_namespaces []: nothing -> string {
     kubectl get namespaces | from ssv | get name
 }
@@ -214,33 +137,6 @@ export def pod_names [
     }
 }
 
-export def kgp [
-    --namespace (-n): string@available_namespaces
-    --all (-a)
-] [string -> table, nothing -> table] {
-    if ($all) {
-        kubectl get pods --all-namespaces | from ssv
-    } else if ($namespace != null) {
-        kubectl get pods -n $namespace | from ssv
-    } else {
-        kubectl get pods | from ssv
-    }
-}
-
-
-export def ktp [
-    --namespace (-n): string@available_namespaces
-] {
-    if ($namespace != null) {
-        kubectl top pods -n $namespace | from ssv
-    } else {
-        kubectl top pods | from ssv
-    }
-}
-
-export def ktno [] {
-    kubectl top nodes | from ssv
-} 
 
 export def kreport [] {
     # getting data from K8s
@@ -307,6 +203,7 @@ export def kreport [] {
 
 export alias kubectl = kubecolor
 export alias klf = kubectl logs -f
+export alias kgp = kubectl get pods
 export alias kgpall = kgp --all
 export alias kdelp = kubectl delete pod
 export alias kdelns = kubectl delete namespace
@@ -315,6 +212,8 @@ export alias kds = kubectl describe service
 export alias kdp = kubectl describe pod
 export alias kdno = kubectl describe node
 export alias keti = kubectl exec -ti
+export alias ktp = kubectl top pods
+export alias ktn = kubectl top nodes
 export alias kgpwatch = viddy --shell nu "kubectl get pods | from ssv"
 export alias ktpwatch = viddy --shell nu "kubectl top pods | from ssv"
 export alias ktnowatch = viddy --shell nu "kubectl top nodes | from ssv"
