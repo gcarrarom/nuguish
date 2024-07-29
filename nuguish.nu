@@ -54,6 +54,8 @@ export def mkdircd [
 export alias wifi = networksetup -setairportpower en0
 export alias openfirefox = xargs -I {} open -a "Firefox" -g "{}"
 
+export alias fzfbat = fzf --preview 'bat --color=always --style=numbers --line-range=:500 {}'  --bind $"enter:become\(($env.EDITOR) {1} +{2})"
+
 ### NMAP
 export alias nmap_check_for_firewall = sudo nmap -sA -p1-65535 -v -T4
 export alias nmap_check_for_vulns = nmap --script=vuln
@@ -353,7 +355,6 @@ export alias gst = git status
 export alias gss = git status -s
 export alias gcam = git commit -am
 
-
 ## Functions
 
 export def --wrapped gitc [ profile_name: any url: any ...args] {
@@ -400,11 +401,16 @@ export def --wrapped gitc [ profile_name: any url: any ...args] {
     echo $"Repository cloned and Git user configuration set for profile: ($profile_name)" | ansi gradient --fgstart '0x40c9ff' --fgend '0xe81cff'
 }
 
+# gently try to delete merged branches, excluding the checked out one
+export def ggdb [] {
+    git branch --merged | lines | where $it !~ '\*' | str trim | where $it != 'master' and $it != 'main' | each { |it| git branch -d $it }
+}
+
 ### Git Add Commit Push
 export def gacp [
     message: string # The commit message
 ] {
-    git add --all ; git commit -m $message; git push
+    git add --all; git commit -m $message; git push
 }
 
 ### Git checkout worktree on the same parent folder
