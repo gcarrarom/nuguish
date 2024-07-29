@@ -51,10 +51,27 @@ export def mkdircd [
 ## System Aliases
 
 ### MacOS
-export alias wifi = networksetup -setairportpower en0
+
+# Turns on/off the wifi
+export def wifi [
+    interface?: string = 'en0' # The interface to be used for the wifi command; defaults to en0
+    --on # Turn on the wifi
+] {
+    if $on {
+        networksetup -setairportpower $interface on
+    } else {
+        networksetup -setairportpower $interface off
+    }
+}
+
 export alias openfirefox = xargs -I {} open -a "Firefox" -g "{}"
 
+# (https://github.com/nushell/nushell/issues/5068)
 export alias fzfbat = fzf --preview 'bat --color=always --style=numbers --line-range=:500 {}'  --bind $"enter:become\(($env.EDITOR) {1} +{2})"
+
+### Zoxide
+# (https://github.com/nushell/nushell/issues/5068)
+# export alias cd = z # I really don't like I can't use if statements in this file... I'll have to find a way to make this work - Disabled by default now though 
 
 ### NMAP
 export alias nmap_check_for_firewall = sudo nmap -sA -p1-65535 -v -T4
@@ -156,13 +173,13 @@ def memoryoutput [] {
 #     echo $new_cpu_value
 # }
 
-def available_namespaces [] {
+def available_namespaces []: nothing -> string {
     kubectl get namespaces | from ssv | get name
 }
 
 export def kreportns [
     namespace?: string@available_namespaces
-] {
+]: [string -> string, nothing -> string] {
     mut toppodsresults = ""
     if ($namespace != null) {
         $toppodsresults = (kubectl top pods -n $namespace)
@@ -189,7 +206,7 @@ export def kreportns [
 
 export def pod_names [
     namespace?: string@available_namespaces
-] {
+]: [string -> string, nothing -> string] {
     if ($namespace != null) {
         kubectl get pods -n $namespace | from ssv | get name
     } else {
@@ -200,7 +217,7 @@ export def pod_names [
 export def kgp [
     --namespace (-n): string@available_namespaces
     --all (-a)
-] {
+] [string -> table, nothing -> table] {
     if ($all) {
         kubectl get pods --all-namespaces | from ssv
     } else if ($namespace != null) {
@@ -442,6 +459,10 @@ export def "guish mod add" [
 ] {
     let module_name = (echo $url | path basename | str replace ".git" "")
     let module_path = ($nu.default-config-dir | path join "modules" | path join $module_name)
+    if ($module_path | path exists) {
+        print $"Module already exists"
+        exit 1
+    }
     git clone $url $module_path
     get_config_file | insert (get_mod_lines | get start) $"use ($module_name)" | save -f $nu.config-path
 }
@@ -450,6 +471,10 @@ export def "guish mod rm" [
     module_name: string # The name of the module to be removed
 ] {
     let module_path = ($nu.default-config-dir | path join "modules" | path join $module_name)
+    if not ($module_path | path exists) {
+        print $"Module does not exist"
+        exit 1
+    }
     rm -rf $module_path
 }
 
