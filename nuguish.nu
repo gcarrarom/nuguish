@@ -52,12 +52,12 @@ export def mkdircd [
 
 ### MacOS
 
-# Turns on/off the wifi
+# Turns on/off the wifi - on by default
 export def wifi [
     interface?: string = 'en0' # The interface to be used for the wifi command; defaults to en0
-    --on # Turn on the wifi
+    --off # Turn off the wifi
 ] {
-    if $on {
+    if $off {
         networksetup -setairportpower $interface on
     } else {
         networksetup -setairportpower $interface off
