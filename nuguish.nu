@@ -224,10 +224,12 @@ export def ktno [] {
 } 
 
 export def kreport [] {
+    # getting data from K8s
     let topnoderesults = (kubectl top nodes | from ssv)
     let allpods = (kubectl get pods --all-namespaces | from ssv)
     let nodeinformation = (kubectl get nodes -o json | from json)
 
+    # transforming data
     let numallpods = (echo $allpods | length)
     let numsystempods = (echo $allpods | where "NAMESPACE" == "kube-system" | length)
     let numpodsnotsystem = (echo $allpods | where "NAMESPACE" != "kube-system" | length)
@@ -235,6 +237,14 @@ export def kreport [] {
     let mempercent = (echo $topnoderesults | get "MEMORY%" | split column "%" | get column1 | into int | math avg)
     let cpunum = (echo $topnoderesults | get "CPU(cores)" | split column "m" | get column1 | into int | math avg)
     let memnum = (echo $topnoderesults | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math avg)
+    let totalcpu = (echo $nodeinformation | get items.status.capacity.cpu | math sum)
+    let totalmemory = ((echo $nodeinformation | get items.status.capacity.memory | split column "K" | into int | math sum) / (1024 * 1024))
+    let numnodes = (echo $topnoderesults | length)
+    let cpuinuse = ($totalcpu * $cpupercent / 100)
+    let mcpuinuse = ($totalcpu * 1000 * $cpupercent / 100)
+    let memoryinuse = ($totalmemory * $mempercent / 100)
+    let memoryinusemb = ($totalmemory * 1024 * $mempercent / 100)
+
     let totalcpu = (echo $nodeinformation | get items.status.capacity.cpu | into int | math sum)
     let totalmemory = ((echo $nodeinformation | get items.status.capacity.memory | split column "K" | values | first | into int | math sum) / (1024 * 1024))
     let numnodes = (echo $topnoderesults | length)
@@ -409,3 +419,32 @@ export def gcow [
     let worktree_name = (echo $"($remote_name)-($branch)" | str replace "/" "-")
     git worktree add ($parent | path join $worktree_name) $"origin/($branch)"
 }
+
+def get_config_file [] {
+    return (open $nu.config-path | split row "\n")
+}
+
+def get_mod_lines [] {
+    let start_line = (get_config_file | enumerate | where item == "# start nuguish-managed" | get index | to text )
+    let end_line = (get_config_file | enumerate | where item == "# end nuguish-managed" | get index | to text )
+    return [["start", "end"]; [$start_line, $end_line]]
+}
+
+# Numanagement
+export def "guish mod add" [
+    url: string # The URL of the module to be added; GitHub URLs only for now
+] {
+    let module_name = (echo $url | path basename | str replace ".git" "")
+    let module_path = ($nu.default-config-dir | path join "modules" | path join $module_name)
+    git clone $url $module_path
+    get_config_file | insert (get_mod_lines | get start) $"use ($module_name)" | save -f $nu.config-path
+}
+
+export def "guish mod rm" [
+    module_name: string # The name of the module to be removed
+] {
+    let module_path = ($nu.default-config-dir | path join "modules" | path join $module_name)
+    rm -rf $module_path
+}
+
+
