@@ -105,9 +105,6 @@ export def kubens [
 ] {
     kubens $namespace
 }
-] {
-
-}
 
 export def kreportns [
     namespace?: string@available_namespaces
