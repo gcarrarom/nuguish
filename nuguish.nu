@@ -377,7 +377,10 @@ export def "git profile add" [
     echo $"Profile '($profile_name)' added to ($YAML_FILE)" | ansi gradient --fgstart '0x40c9ff' --fgend '0xe81cff'
 }
 
-export def --wrapped gitc [ profile_name: any url: any ...args] {
+export def --wrapped gitc [ 
+    profile_name: string@gitprofiles # The name of the profile to be used 
+    url: any ...args
+] {
     let YAML_FILE = ($nu.home-path | path join ".git_profiles.yml")
 
     # Clone the repository with provided arguments
