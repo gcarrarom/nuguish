@@ -297,6 +297,86 @@ export alias gcam = git commit -am
 
 ## Functions
 
+def get_profile_config_path [] {
+    return ($nu.home-path | path join ".git_profiles.yml")
+}
+
+def get_profile_config [
+    path: path = get_profile_config_path
+] {
+    let YAML_FILE = get_profile_config_path
+    if not ($YAML_FILE | path exists) {
+        echo $"Creating file ($YAML_FILE)"
+        echo "profiles: {}" | save -f $YAML_FILE
+    }
+    return (open ($nu.home-path | path join ".git_profiles.yml"))
+}
+
+export def "git profile list" [] {
+    let config = get_profile_config
+    echo $config.profiles | transpose key value | each {|record| [["Profile", "Name", "Email"]; [$record.key, $record.value.user.name, $record.value.user.email]] } | flatten
+}
+
+def gitprofiles [] {
+    let config = get_profile_config
+    return ($config | get profiles | transpose key value | get key)
+}
+
+export def "git profile remove" [
+    profile_name: string@gitprofiles # The name of the profile to be removed
+] {
+    let YAML_FILE = get_profile_config_path
+    let config = get_profile_config
+
+    if not ($profile_name in $config.profiles) {
+        error make {msg: "Profile does not exist"}
+    }
+
+    let new_profiles = ($config | get profiles | reject $profile_name)
+    let $new_config = $config | upsert profiles $new_profiles
+    echo $new_config | to yaml | save -f $YAML_FILE
+    echo $"Profile '($profile_name)' removed from ($YAML_FILE)" | ansi gradient --fgstart '0x40c9ff' --fgend '0xe81cff'
+}
+
+export def "git profile set" [
+    profile_name: string # The name of the profile to be added
+    name: string # The name of the user
+    email: string # The email of the user
+] {
+
+    let YAML_FILE = get_profile_config_path
+    let config = get_profile_config
+
+    echo "Adding profile '($profile_name)' to ($YAML_FILE)"
+
+
+    let new_profiles = ($config | get profiles | upsert $profile_name {user: {name: $name, email: $email}})
+    let $new_config = $config | upsert profiles $new_profiles
+    echo $new_config | to yaml | save -f $YAML_FILE
+    echo $"Profile '($profile_name)' added to ($YAML_FILE)" | ansi gradient --fgstart '0x40c9ff' --fgend '0xe81cff'
+}
+
+export def "git profile add" [
+    profile_name: string # The name of the profile to be added
+    name: string # The name of the user
+    email: string # The email of the user
+] {
+
+    let YAML_FILE = get_profile_config_path
+    let config = get_profile_config
+
+    if ($profile_name in $config.profiles) {
+        error make {msg: "Profile already exists"}
+    }
+    echo "Adding profile '($profile_name)' to ($YAML_FILE)"
+
+
+    let new_profiles = ($config | get profiles | upsert $profile_name {user: {name: $name, email: $email}})
+    let $new_config = $config | upsert profiles $new_profiles
+    echo $new_config | to yaml | save -f $YAML_FILE
+    echo $"Profile '($profile_name)' added to ($YAML_FILE)" | ansi gradient --fgstart '0x40c9ff' --fgend '0xe81cff'
+}
+
 export def --wrapped gitc [ profile_name: any url: any ...args] {
     let YAML_FILE = ($nu.home-path | path join ".git_profiles.yml")
 
@@ -336,7 +416,6 @@ export def --wrapped gitc [ profile_name: any url: any ...args] {
     cd $repo_path
     git config user.name $name
     git config user.email $email
-    cd ..
 
     echo $"Repository cloned and Git user configuration set for profile: ($profile_name)" | ansi gradient --fgstart '0x40c9ff' --fgend '0xe81cff'
 }
