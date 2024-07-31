@@ -106,6 +106,16 @@ export def kubens [
     ^kubens $namespace
 }
 
+def kube_contexts []: nothing -> string {
+    kubectl config get-contexts | from ssv | get name
+}
+
+export def kubectx [
+    context?: string@kube_contexts
+] {
+    ^kubectx $context
+}
+
 export def kreportns [
     namespace?: string@available_namespaces
 ]: [string -> string, nothing -> string] {
