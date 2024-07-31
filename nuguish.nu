@@ -103,7 +103,7 @@ def available_namespaces []: nothing -> string {
 export def kubens [
     namespace?: string@available_namespaces
 ] {
-    kubens $namespace
+    ^kubens $namespace
 }
 
 export def kreportns [
