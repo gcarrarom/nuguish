@@ -100,6 +100,15 @@ def available_namespaces []: nothing -> string {
     kubectl get namespaces | from ssv | get name
 }
 
+export def kubens [
+    namespace?: string@available_namespaces
+] {
+    kubens $namespace
+}
+] {
+
+}
+
 export def kreportns [
     namespace?: string@available_namespaces
 ]: [string -> string, nothing -> string] {
