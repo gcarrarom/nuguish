@@ -103,7 +103,11 @@ def available_namespaces []: nothing -> string {
 export def kubens [
     namespace?: string@available_namespaces
 ] {
-    ^kubens $namespace
+    if ($namespace == null) {
+        ^kubens
+    } else {
+        ^kubens $namespace
+    }
 }
 
 def kube_contexts []: nothing -> string {
@@ -113,7 +117,11 @@ def kube_contexts []: nothing -> string {
 export def kubectx [
     context?: string@kube_contexts
 ] {
-    ^kubectx $context
+    if ($context == null) {
+        ^kubectx
+    } else {
+        ^kubectx $context
+    }
 }
 
 export def kreportns [
