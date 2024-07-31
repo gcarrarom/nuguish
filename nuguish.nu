@@ -38,7 +38,7 @@ export def "dbd" [
 ## System commands
 
 ### Create directory and cd into it
-export def mkdircd [
+export def --env mkdircd [
     path: path # path to be generated and cd'd into
 ] {
     if ((echo $path | path type) == 'dir') {
