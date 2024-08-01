@@ -226,20 +226,69 @@ export def kreport [] {
 ## kubernetes aliases
 
 export alias kubectl = kubecolor
+
+### logs
+export alias kl = kubectl logs
 export alias klf = kubectl logs -f
+
+### Pods
 export alias kgp = kubectl get pods
 export alias kgpall = kgp --all
 export alias kdelp = kubectl delete pod
-export alias kdelns = kubectl delete namespace
 export alias kdelpall = kubectl delete pods --all
-export alias kds = kubectl describe service
 export alias kdp = kubectl describe pod
-export alias kdno = kubectl describe node
-export alias keti = kubectl exec -ti
 export alias ktp = kubectl top pods
-export alias ktn = kubectl top nodes
 export alias kgpwatch = viddy --shell nu "kubectl get pods | from ssv"
 export alias ktpwatch = viddy --shell nu "kubectl top pods | from ssv"
+export alias kep = kubectl edit pod
+
+### Ingress
+export alias kgi = kubectl get ingress
+export alias kdeli = kubectl delete ingress
+export alias kdi = kubectl describe ingress
+export alias kgiall = kgi --all
+export alias kdi = kubectl describe ingress
+export alias kei = kubectl edit ingress
+
+### Exec
+export alias keti = kubectl exec -ti
+
+### Namespace
+export alias kdelns = kubectl delete namespace
+export alias kgns = kubectl get namespaces
+export alias kdns = kubectl describe namespace
+export alias kcns = kubectl create namespace
+export alias kens = kubectl edit namespace
+
+### ConfigMap
+export alias kgcm = kubectl get configmap
+export alias kdelcm = kubectl delete configmap
+export alias kdcm = kubectl describe configmap
+export alias kccm = kubectl create configmap
+export alias kgcmjson = kgcm -o json
+export alias kgcmyaml = kgcm -o yaml
+export alias kecm = kubectl edit configmap
+
+### Secrets
+export alias kgsec = kubectl get secrets
+export alias kdelsec = kubectl delete secrets
+export alias kdsec = kubectl describe secrets
+export alias kcsec = kubectl create secrets
+export alias kesec = kubectl edit secrets
+
+### Services
+export alias kds = kubectl describe service
+export alias kgs = kubectl get services
+export alias kgsall = kgs --all
+export alias kdsall = kubectl describe services --all
+export alias kgsjson = kgs -o json
+export alias kgsjsonall = kgsall -o json
+export alias kgswatch = viddy --shell nu "kubectl get services | from ssv"
+export alias kes = kubectl edit service
+
+### Nodes
+export alias kdno = kubectl describe node
+export alias ktn = kubectl top nodes
 export alias ktnowatch = viddy --shell nu "kubectl top nodes | from ssv"
 
 
@@ -447,40 +496,3 @@ export def gcow [
     let worktree_name = (echo $"($remote_name)-($branch)" | str replace "/" "-")
     git worktree add ($parent | path join $worktree_name) $"origin/($branch)"
 }
-
-def get_config_file [] {
-    return (open $nu.config-path | split row "\n")
-}
-
-def get_mod_lines [] {
-    let start_line = (get_config_file | enumerate | where item == "# start nuguish-managed" | get index | to text )
-    let end_line = (get_config_file | enumerate | where item == "# end nuguish-managed" | get index | to text )
-    return [["start", "end"]; [$start_line, $end_line]]
-}
-
-# Numanagement
-export def "guish mod add" [
-    url: string # The URL of the module to be added; GitHub URLs only for now
-] {
-    let module_name = (echo $url | path basename | str replace ".git" "")
-    let module_path = ($nu.default-config-dir | path join "modules" | path join $module_name)
-    if ($module_path | path exists) {
-        print $"Module already exists"
-        exit 1
-    }
-    git clone $url $module_path
-    get_config_file | insert (get_mod_lines | get start) $"use ($module_name)" | save -f $nu.config-path
-}
-
-export def "guish mod rm" [
-    module_name: string # The name of the module to be removed
-] {
-    let module_path = ($nu.default-config-dir | path join "modules" | path join $module_name)
-    if not ($module_path | path exists) {
-        print $"Module does not exist"
-        exit 1
-    }
-    rm -rf $module_path
-}
-
-
