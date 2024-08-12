@@ -64,6 +64,9 @@ export def wifi [
     }
 }
 
+### Bitwarden Send Clipboard and get Access URL
+export alias pbwsend = pbpaste | bw send $in | from json | get accessUrl | pbcopy
+
 export alias openfirefox = xargs -I {} open -a "Firefox" -g "{}"
 
 # (https://github.com/nushell/nushell/issues/5068)
