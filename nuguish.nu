@@ -100,202 +100,202 @@ export alias nmap_web_safe_osscan = sudo nmap -p 80,443 -O -v --osscan-guess --f
 export alias randomdocker = http get https://frightanic.com/goodies_content/docker-names.php
 
 
-# Kubernetes
+# # Kubernetes
 
-def available_namespaces []: nothing -> string {
-    kubectl get namespaces | from ssv | get name
-}
+# def available_namespaces []: nothing -> string {
+#     kubectl get namespaces | from ssv | get name
+# }
 
-export def kubens [
-    namespace?: string@available_namespaces
-] {
-    if ($namespace == null) {
-        ^kubens
-    } else {
-        ^kubens $namespace
-    }
-}
+# export def kubens [
+#     namespace?: string@available_namespaces
+# ] {
+#     if ($namespace == null) {
+#         ^kubens
+#     } else {
+#         ^kubens $namespace
+#     }
+# }
 
-def kube_contexts []: nothing -> string {
-    kubectl config get-contexts | from ssv | get name
-}
+# def kube_contexts []: nothing -> string {
+#     kubectl config get-contexts | from ssv | get name
+# }
 
-export def kubectx [
-    context?: string@kube_contexts
-] {
-    if ($context == null) {
-        ^kubectx
-    } else {
-        ^kubectx $context
-    }
-}
+# export def kubectx [
+#     context?: string@kube_contexts
+# ] {
+#     if ($context == null) {
+#         ^kubectx
+#     } else {
+#         ^kubectx $context
+#     }
+# }
 
-export def kreportns [
-    namespace?: string@available_namespaces
-]: [string -> string, nothing -> string] {
-    mut toppodsresults = ""
-    if ($namespace != null) {
-        $toppodsresults = (kubectl top pods -n $namespace)
-    } else {
-        $toppodsresults = (kubectl top pods )
-    }
+# export def kreportns [
+#     namespace?: string@available_namespaces
+# ]: [string -> string, nothing -> string] {
+#     mut toppodsresults = ""
+#     if ($namespace != null) {
+#         $toppodsresults = (kubectl top pods -n $namespace)
+#     } else {
+#         $toppodsresults = (kubectl top pods )
+#     }
 
-    let avgcpu = echo $toppodsresults | from ssv | get "CPU(cores)" | split column "m" | get column1 | into int | math avg
-    let totalcpu = echo $toppodsresults | from ssv | get "CPU(cores)" | split column "m" | get column1 | into int | math sum
-    let avgmem = echo $toppodsresults | from ssv | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math avg
-    let totalmem = echo $toppodsresults | from ssv | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math sum
+#     let avgcpu = echo $toppodsresults | from ssv | get "CPU(cores)" | split column "m" | get column1 | into int | math avg
+#     let totalcpu = echo $toppodsresults | from ssv | get "CPU(cores)" | split column "m" | get column1 | into int | math sum
+#     let avgmem = echo $toppodsresults | from ssv | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math avg
+#     let totalmem = echo $toppodsresults | from ssv | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math sum
 
-    echo $'([
-        ["Metric" "Value"];
-        ["Total Memory (MB)" $totalmem]
-        ["Total CPU (mCPU)" $totalcpu]
-    ] | table -i false)
-([
-        ["Metric" "Value"];
-        ["Average Memory (MB)" $avgmem]
-        ["Average CPU (mCPU)" $avgcpu]
-    ] | table -i false)'
-}
+#     echo $'([
+#         ["Metric" "Value"];
+#         ["Total Memory (MB)" $totalmem]
+#         ["Total CPU (mCPU)" $totalcpu]
+#     ] | table -i false)
+# ([
+#         ["Metric" "Value"];
+#         ["Average Memory (MB)" $avgmem]
+#         ["Average CPU (mCPU)" $avgcpu]
+#     ] | table -i false)'
+# }
 
-export def pod_names [
-    namespace?: string@available_namespaces
-]: [string -> string, nothing -> string] {
-    if ($namespace != null) {
-        kubectl get pods -n $namespace | from ssv | get name
-    } else {
-        kubectl get pods | from ssv | get name
-    }
-}
+# export def pod_names [
+#     namespace?: string@available_namespaces
+# ]: [string -> string, nothing -> string] {
+#     if ($namespace != null) {
+#         kubectl get pods -n $namespace | from ssv | get name
+#     } else {
+#         kubectl get pods | from ssv | get name
+#     }
+# }
 
 
-export def kreport [] {
-    # getting data from K8s
-    let topnoderesults = (kubectl top nodes | from ssv)
-    let allpods = (kubectl get pods --all-namespaces | from ssv)
-    let nodeinformation = (kubectl get nodes -o json | from json)
+# export def kreport [] {
+#     # getting data from K8s
+#     let topnoderesults = (kubectl top nodes | from ssv)
+#     let allpods = (kubectl get pods --all-namespaces | from ssv)
+#     let nodeinformation = (kubectl get nodes -o json | from json)
 
-    # transforming data
-    let numallpods = (echo $allpods | length)
-    let numsystempods = (echo $allpods | where "NAMESPACE" == "kube-system" | length)
-    let numpodsnotsystem = (echo $allpods | where "NAMESPACE" != "kube-system" | length)
-    let cpupercent = (echo $topnoderesults | get "CPU%" | split column "%" | get column1 | into int | math avg)
-    let mempercent = (echo $topnoderesults | get "MEMORY%" | split column "%" | get column1 | into int | math avg)
-    let cpunum = (echo $topnoderesults | get "CPU(cores)" | split column "m" | get column1 | into int | math avg)
-    let memnum = (echo $topnoderesults | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math avg)
-    let totalcpu = (echo $nodeinformation | get items.status.capacity.cpu | math sum)
-    let totalmemory = ((echo $nodeinformation | get items.status.capacity.memory | split column "K" | into int | math sum) / (1024 * 1024))
-    let numnodes = (echo $topnoderesults | length)
-    let cpuinuse = ($totalcpu * $cpupercent / 100)
-    let mcpuinuse = ($totalcpu * 1000 * $cpupercent / 100)
-    let memoryinuse = ($totalmemory * $mempercent / 100)
-    let memoryinusemb = ($totalmemory * 1024 * $mempercent / 100)
+#     # transforming data
+#     let numallpods = (echo $allpods | length)
+#     let numsystempods = (echo $allpods | where "NAMESPACE" == "kube-system" | length)
+#     let numpodsnotsystem = (echo $allpods | where "NAMESPACE" != "kube-system" | length)
+#     let cpupercent = (echo $topnoderesults | get "CPU%" | split column "%" | get column1 | into int | math avg)
+#     let mempercent = (echo $topnoderesults | get "MEMORY%" | split column "%" | get column1 | into int | math avg)
+#     let cpunum = (echo $topnoderesults | get "CPU(cores)" | split column "m" | get column1 | into int | math avg)
+#     let memnum = (echo $topnoderesults | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math avg)
+#     let totalcpu = (echo $nodeinformation | get items.status.capacity.cpu | math sum)
+#     let totalmemory = ((echo $nodeinformation | get items.status.capacity.memory | split column "K" | into int | math sum) / (1024 * 1024))
+#     let numnodes = (echo $topnoderesults | length)
+#     let cpuinuse = ($totalcpu * $cpupercent / 100)
+#     let mcpuinuse = ($totalcpu * 1000 * $cpupercent / 100)
+#     let memoryinuse = ($totalmemory * $mempercent / 100)
+#     let memoryinusemb = ($totalmemory * 1024 * $mempercent / 100)
 
-    let totalcpu = (echo $nodeinformation | get items.status.capacity.cpu | into int | math sum)
-    let totalmemory = ((echo $nodeinformation | get items.status.capacity.memory | split column "K" | values | first | into int | math sum) / (1024 * 1024))
-    let numnodes = (echo $topnoderesults | length)
-    let cpuinuse = ($totalcpu * $cpupercent / 100)
-    let mcpuinuse = ($totalcpu * 1000 * $cpupercent / 100)
-    let memoryinuse = ($totalmemory * $mempercent / 100)
-    let memoryinusemb = ($totalmemory * 1024 * $mempercent / 100)
+#     let totalcpu = (echo $nodeinformation | get items.status.capacity.cpu | into int | math sum)
+#     let totalmemory = ((echo $nodeinformation | get items.status.capacity.memory | split column "K" | values | first | into int | math sum) / (1024 * 1024))
+#     let numnodes = (echo $topnoderesults | length)
+#     let cpuinuse = ($totalcpu * $cpupercent / 100)
+#     let mcpuinuse = ($totalcpu * 1000 * $cpupercent / 100)
+#     let memoryinuse = ($totalmemory * $mempercent / 100)
+#     let memoryinusemb = ($totalmemory * 1024 * $mempercent / 100)
 
-    let table1 = [
-        ["Metric", "Value"];
-        ["# All Pods", $numallpods]
-        ["# Pods in kube-system", $numsystempods]
-        ["# Pods elsewhere", $numpodsnotsystem]
-        ["# Nodes", $numnodes]
-    ] | table -i false
+#     let table1 = [
+#         ["Metric", "Value"];
+#         ["# All Pods", $numallpods]
+#         ["# Pods in kube-system", $numsystempods]
+#         ["# Pods elsewhere", $numpodsnotsystem]
+#         ["# Nodes", $numnodes]
+#     ] | table -i false
 
-    let table2 = [
-        ["Metric", "Value"];
-        ["Total CPU", $totalcpu]
-        ["Total Memory (GB)", ($totalmemory | math round)]
-        ["CPU per Node", ($totalcpu / $numnodes)]
-        ["Memory per Node", ($totalmemory / $numnodes | math round)]
-    ] | table -i false
+#     let table2 = [
+#         ["Metric", "Value"];
+#         ["Total CPU", $totalcpu]
+#         ["Total Memory (GB)", ($totalmemory | math round)]
+#         ["CPU per Node", ($totalcpu / $numnodes)]
+#         ["Memory per Node", ($totalmemory / $numnodes | math round)]
+#     ] | table -i false
 
-    let table3 = [
-        ["Metric", "Value"];
-        ["# CPU in use (approx.)", ($cpuinuse | math round)]
-        ["Memory in use (GB)", ($memoryinuse | math round)]
-        ["mCPU/POD", (($mcpuinuse / $numallpods) | math round)]
-        ["Memory (MB)/POD", (($memoryinusemb / $numallpods) | math round)]
-        ["CPU avg (mCPU)", ($cpunum | math round)]
-        ["RAM avg (MB)", ($memnum | math round)]
-    ] | table -i false
+#     let table3 = [
+#         ["Metric", "Value"];
+#         ["# CPU in use (approx.)", ($cpuinuse | math round)]
+#         ["Memory in use (GB)", ($memoryinuse | math round)]
+#         ["mCPU/POD", (($mcpuinuse / $numallpods) | math round)]
+#         ["Memory (MB)/POD", (($memoryinusemb / $numallpods) | math round)]
+#         ["CPU avg (mCPU)", ($cpunum | math round)]
+#         ["RAM avg (MB)", ($memnum | math round)]
+#     ] | table -i false
 
-    echo $"($table1)
-($table2)
-($table3)"
-}
+#     echo $"($table1)
+# ($table2)
+# ($table3)"
+# }
 
-## kubernetes aliases
+# ## kubernetes aliases
 
-export alias kubectl = kubecolor
+# export alias kubectl = kubecolor
 
-### logs
-export alias kl = kubectl logs
-export alias klf = kubectl logs -f
+# ### logs
+# export alias kl = kubectl logs
+# export alias klf = kubectl logs -f
 
-### Pods
-export alias kgp = kubectl get pods
-export alias kgpall = kgp --all
-export alias kdelp = kubectl delete pod
-export alias kdelpall = kubectl delete pods --all
-export alias kdp = kubectl describe pod
-export alias ktp = kubectl top pods
-export alias kgpwatch = viddy --shell nu "kubectl get pods | from ssv"
-export alias ktpwatch = viddy --shell nu "kubectl top pods | from ssv"
-export alias kep = kubectl edit pod
+# ### Pods
+# export alias kgp = kubectl get pods
+# export alias kgpall = kgp --all
+# export alias kdelp = kubectl delete pod
+# export alias kdelpall = kubectl delete pods --all
+# export alias kdp = kubectl describe pod
+# export alias ktp = kubectl top pods
+# export alias kgpwatch = viddy --shell nu "kubectl get pods | from ssv"
+# export alias ktpwatch = viddy --shell nu "kubectl top pods | from ssv"
+# export alias kep = kubectl edit pod
 
-### Ingress
-export alias kgi = kubectl get ingress
-export alias kdeli = kubectl delete ingress
-export alias kdi = kubectl describe ingress
-export alias kgiall = kgi --all
-export alias kdi = kubectl describe ingress
-export alias kei = kubectl edit ingress
+# ### Ingress
+# export alias kgi = kubectl get ingress
+# export alias kdeli = kubectl delete ingress
+# export alias kdi = kubectl describe ingress
+# export alias kgiall = kgi --all
+# export alias kdi = kubectl describe ingress
+# export alias kei = kubectl edit ingress
 
-### Exec
-export alias keti = kubectl exec -ti
+# ### Exec
+# export alias keti = kubectl exec -ti
 
-### Namespace
-export alias kdelns = kubectl delete namespace
-export alias kgns = kubectl get namespaces
-export alias kdns = kubectl describe namespace
-export alias kcns = kubectl create namespace
-export alias kens = kubectl edit namespace
+# ### Namespace
+# export alias kdelns = kubectl delete namespace
+# export alias kgns = kubectl get namespaces
+# export alias kdns = kubectl describe namespace
+# export alias kcns = kubectl create namespace
+# export alias kens = kubectl edit namespace
 
-### ConfigMap
-export alias kgcm = kubectl get configmap
-export alias kdelcm = kubectl delete configmap
-export alias kdcm = kubectl describe configmap
-export alias kccm = kubectl create configmap
-export alias kgcmjson = kgcm -o json
-export alias kgcmyaml = kgcm -o yaml
-export alias kecm = kubectl edit configmap
+# ### ConfigMap
+# export alias kgcm = kubectl get configmap
+# export alias kdelcm = kubectl delete configmap
+# export alias kdcm = kubectl describe configmap
+# export alias kccm = kubectl create configmap
+# export alias kgcmjson = kgcm -o json
+# export alias kgcmyaml = kgcm -o yaml
+# export alias kecm = kubectl edit configmap
 
-### Secrets
-export alias kgsec = kubectl get secrets
-export alias kdelsec = kubectl delete secrets
-export alias kdsec = kubectl describe secrets
-export alias kcsec = kubectl create secrets
-export alias kesec = kubectl edit secrets
+# ### Secrets
+# export alias kgsec = kubectl get secrets
+# export alias kdelsec = kubectl delete secrets
+# export alias kdsec = kubectl describe secrets
+# export alias kcsec = kubectl create secrets
+# export alias kesec = kubectl edit secrets
 
-### Services
-export alias kds = kubectl describe service
-export alias kgs = kubectl get services
-export alias kgsall = kgs --all
-export alias kdsall = kubectl describe services --all
-export alias kgsjson = kgs -o json
-export alias kgsjsonall = kgsall -o json
-export alias kgswatch = viddy --shell nu "kubectl get services | from ssv"
-export alias kes = kubectl edit service
+# ### Services
+# export alias kds = kubectl describe service
+# export alias kgs = kubectl get services
+# export alias kgsall = kgs --all
+# export alias kdsall = kubectl describe services --all
+# export alias kgsjson = kgs -o json
+# export alias kgsjsonall = kgsall -o json
+# export alias kgswatch = viddy --shell nu "kubectl get services | from ssv"
+# export alias kes = kubectl edit service
 
-### Nodes
-export alias kdno = kubectl describe node
-export alias ktn = kubectl top nodes
-export alias ktnowatch = viddy --shell nu "kubectl top nodes | from ssv"
+# ### Nodes
+# export alias kdno = kubectl describe node
+# export alias ktn = kubectl top nodes
+# export alias ktnowatch = viddy --shell nu "kubectl top nodes | from ssv"
 
 
 # Azure
