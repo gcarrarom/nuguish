@@ -211,13 +211,14 @@ export def kreport [] {
     let table3 = [
         ["Metric", "Value"];
         ["# CPU in use (approx.)", ($cpuinuse | math round)]
+        ["CPU % in use", ($cpupercent)]
         ["Memory in use (GB)", ($memoryinuse | math round)]
+        ["Memory % in use", ($mempercent)]
         ["mCPU/POD", (($mcpuinuse / $numallpods) | math round)]
         ["Memory (MB)/POD", (($memoryinusemb / $numallpods) | math round)]
         ["CPU avg (mCPU)", ($cpunum | math round)]
         ["RAM avg (MB)", ($memnum | math round)]
     ] | table -i false
-
     echo $"($table1)
 ($table2)
 ($table3)"
