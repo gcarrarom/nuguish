@@ -2,7 +2,7 @@
 ## git commands
 
 ### Shows the sha of the last commit by default, or the last n commits
-export def glc [n?: int] [nothing -> string] {
+export def glc [n?: int] { 
     if $n == null {
         git log --oneline | head -n 2 | tail +2 | cut -d " " -f 1
     } else {

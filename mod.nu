@@ -2,7 +2,7 @@
 ## git commands
 
 ### Shows the sha of the last commit by default, or the last n commits
-export def glc [n?: int] [nothing -> string] {
+export def glc [n?: int]  {
     if $n == null {
         git log --oneline | head -n 2 | tail +2 | cut -d " " -f 1
     } else {
@@ -172,8 +172,8 @@ export def kreport [] {
     let numallpods = (echo $allpods | length)
     let numsystempods = (echo $allpods | where "NAMESPACE" == "kube-system" | length)
     let numpodsnotsystem = (echo $allpods | where "NAMESPACE" != "kube-system" | length)
-    let cpupercent = (echo $topnoderesults | get "CPU%" | split column "%" | get column1 | into int | math avg)
-    let mempercent = (echo $topnoderesults | get "MEMORY%" | split column "%" | get column1 | into int | math avg)
+    let cpupercent = (echo $topnoderesults | get "CPU(%)" | split column "%" | get column1 | into int | math avg)
+    let mempercent = (echo $topnoderesults | get "MEMORY(%)" | split column "%" | get column1 | into int | math avg)
     let cpunum = (echo $topnoderesults | get "CPU(cores)" | split column "m" | get column1 | into int | math avg)
     let memnum = (echo $topnoderesults | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math avg)
     let totalcpu = (echo $nodeinformation | get items.status.capacity.cpu | into float | math sum)
