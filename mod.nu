@@ -10,6 +10,10 @@ export def glc [n?: int]  {
     }
 }
 
+export def --wrapped tstern [...args] {
+  stern ...$args | tspin
+}
+
 ### Resets the current branch to the last nth commit
 export def grw [n?: int] {
     git reset --hard (glc $n)
@@ -18,12 +22,35 @@ export def grw [n?: int] {
 # Docker
 ## Docker commands
 
-### Builds the docker image and runs it
-export def "dbd" [
+export def "cbr" [
     --port (-p): string = '8080:8080' # The port mapping for the container on run (8080:8080)
     --tag (-t): string = 'nuguish' # The tag to be used on the build of the image
     --name: string = 'nuguish' # The name of the container to run
     --volume: string # the mapping for the container runtime to bind into a volume (i.e.: ./something:/app/)
+    --detatched (-d) # Whether you are going to run detached the image or not
+    path: path # The path of the context to run docker build on
+] {
+    try {
+      let buildhash = do -i {podman build -t $tag $path | tail -1 | cut -d " " -f 3 } |complete
+      $buildhash.stderr
+    } catch {|err|
+      error make $err
+      return 10
+    }
+    if $volume == null {
+        echo $"podman run --name ($name) -t ($tag) -p ($port) "
+    } else {
+        echo $"podman run -v ($volume) --name ($name) -t ($tag) -p ($port) "
+    }
+}
+
+### Builds the docker image and runs it
+export def "dbr" [
+    --port (-p): string = '8080:8080' # The port mapping for the container on run (8080:8080)
+    --tag (-t): string = 'nuguish' # The tag to be used on the build of the image
+    --name: string = 'nuguish' # The name of the container to run
+    --volume: string # the mapping for the container runtime to bind into a volume (i.e.: ./something:/app/)
+    --detatched (-d) # Whether you are going to run detached the image or not
     path: path # The path of the context to run docker build on
 ] {
     let buildhash = (docker build -t $tag $path | tail -1 | cut -d " " -f 3 )
@@ -125,30 +152,43 @@ export def kubectx [
 }
 
 export def kreportns [
-    namespace?: string@available_namespaces
-]: [string -> string, nothing -> string] {
+    ...namespaces: string@available_namespaces
+    --all (-A)
+]: [string -> record<CPU: int, Memory: int, avgCPU: int, avgMemory: int>, nothing -> record<CPU: int, Memory: int, avgCPU: int, avgMemory: int>, list<string> -> record<CPU: int, Memory: int, avgCPU: int, avgMemory: int, Namespace: string>] {
+    if $all or ($namespaces | length) > 1 {
+        let ns_list = if $all {
+            kubectl get namespaces | from ssv | get NAME
+        } else {
+            $namespaces
+        }
+
+        return (
+          $ns_list | each {|ns|
+                let $ns_report = kreportns $ns
+                return ($ns_report | insert Namespace $ns)
+          }
+        )
+    }
     mut toppodsresults = ""
-    if ($namespace != null) {
-        $toppodsresults = (kubectl top pods -n $namespace)
+    if ($namespaces | length) == 1 {
+        $toppodsresults = (kubectl top pods -n ($namespaces | first))
     } else {
         $toppodsresults = (kubectl top pods )
     }
 
-    let avgcpu = echo $toppodsresults | from ssv | get "CPU(cores)" | split column "m" | get column1 | into int | math avg
-    let totalcpu = echo $toppodsresults | from ssv | get "CPU(cores)" | split column "m" | get column1 | into int | math sum
-    let avgmem = echo $toppodsresults | from ssv | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math avg
-    let totalmem = echo $toppodsresults | from ssv | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math sum
-
-    echo $'([
-        ["Metric" "Value"];
-        ["Total Memory (MB)" $totalmem]
-        ["Total CPU (mCPU)" $totalcpu]
-    ] | table -i false)
-([
-        ["Metric" "Value"];
-        ["Average Memory (MB)" $avgmem]
-        ["Average CPU (mCPU)" $avgcpu]
-    ] | table -i false)'
+    let parsed = $toppodsresults | from ssv
+    if ($parsed | length) > 0 {
+        let avgcpu = $parsed | get "CPU(cores)" | split column "m" | get column1 | into int | math avg
+        let totalcpu = $parsed | get "CPU(cores)" | split column "m" | get column1 | into int | math sum
+        let avgmem = $parsed | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math avg
+        let totalmem = $parsed | get "MEMORY(bytes)" | split column "M" | get column1 | into int | math sum
+        return {
+            "CPU": $totalcpu
+            "Memory": $totalmem
+            "avgCPU": $avgcpu
+            "avgMemory": $avgmem
+        }
+    }
 }
 
 export def pod_names [
