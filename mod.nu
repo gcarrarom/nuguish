@@ -388,7 +388,7 @@ export alias gcam = git commit -am
 ## Functions
 
 def get_profile_config_path [] {
-    return ($nu.home-path | path join ".git_profiles.yml")
+    return ($nu.home-dir | path join ".git_profiles.yml")
 }
 
 def get_profile_config [
@@ -399,7 +399,7 @@ def get_profile_config [
         echo $"Creating file ($YAML_FILE)"
         echo "profiles: {}" | save -f $YAML_FILE
     }
-    return (open ($nu.home-path | path join ".git_profiles.yml"))
+    return (open ($nu.home-dir | path join ".git_profiles.yml"))
 }
 
 export def "git profile list" [] {
@@ -471,7 +471,7 @@ export def --wrapped gitc [
     profile_name: string@gitprofiles # The name of the profile to be used
     url: any ...args
 ] {
-    let YAML_FILE = ($nu.home-path | path join ".git_profiles.yml")
+    let YAML_FILE = ($nu.home-dir | path join ".git_profiles.yml")
 
     # Clone the repository with provided arguments
     git clone $url ...$args
@@ -494,7 +494,7 @@ export def --wrapped gitc [
         $repo_path = $last_arg
     }
     # Read and parse the YAML file for the profile details
-    let config = (open ($nu.home-path | path join .git_profiles.yml))
+    let config = (open ($nu.home-dir | path join .git_profiles.yml))
 
     # Look up the Git configuration details from the parsed
     let name = ($config.profiles | get $profile_name | get user | get name)
